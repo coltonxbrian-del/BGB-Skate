@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#111018">
+  <meta name="description" content="Street Legend Skate — an original mobile skateboarding game.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <title>Street Legend Skate</title>
+  <style>
+    :root { color-scheme: dark; --pink:#ff3f9b; --lime:#d6ff62; --ink:#111018; }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { margin:0; width:100%; height:100%; overflow:hidden; background:var(--ink); font-family: ui-rounded,system-ui,-apple-system,Segoe UI,sans-serif; touch-action:none; }
+    #game { position:fixed; inset:0; width:100%; height:100%; display:block; }
+    .hud { position:fixed; inset:0; pointer-events:none; color:white; }
+    .top { position:absolute; top:env(safe-area-inset-top,12px); left:14px; right:14px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .brand { font-weight:1000; letter-spacing:.09em; font-size:clamp(12px,3vw,17px); text-shadow:0 2px 10px #000; }
+    .brand span { color:var(--pink); }
+    .stats { display:flex; gap:8px; }
+    .pill { background:#111018c9; border:1px solid #ffffff30; border-radius:14px; padding:7px 10px; min-width:70px; text-align:center; backdrop-filter:blur(8px); }
+    .pill small { display:block; color:#c7c2d1; font-size:9px; letter-spacing:.13em; font-weight:800; }
+    .pill b { font-size:17px; }
+    #trick { position:absolute; top:18%; width:100%; text-align:center; font-size:clamp(22px,6vw,38px); font-weight:1000; color:var(--lime); text-shadow:0 3px 18px #000; opacity:0; transform:translateY(8px); transition:.15s; }
+    #trick.show { opacity:1; transform:translateY(0); }
+    .bottom { position:absolute; bottom:calc(env(safe-area-inset-bottom, 0px) + 14px); left:0; right:0; display:flex; justify-content:space-between; align-items:end; padding:0 14px; gap:12px; }
+    .cluster { display:flex; gap:9px; align-items:end; }
+    button { pointer-events:auto; border:1px solid #ffffff40; color:white; background:#171521d9; backdrop-filter:blur(10px); border-radius:18px; font:900 12px system-ui; letter-spacing:.04em; min-width:58px; min-height:58px; padding:8px; box-shadow:0 5px 18px #0005; touch-action:none; }
+    button:active,button.active { background:var(--pink); border-color:#fff; transform:scale(.96); }
+    button.action { min-width:68px; min-height:68px; border-radius:22px; }
+    button .sub { display:block; font-size:9px; color:#c8c3d1; margin-top:3px; }
+    #ollie { background:#8d1d60e8; border-color:#ff8bc4; }
+    #flip { background:#242b18e8; border-color:#d6ff62; }
+    #grind { background:#18323ae8; border-color:#70e6ff; }
+    .hint { position:absolute; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); left:0; right:0; text-align:center; color:#ffffffa8; font-size:10px; font-weight:700; letter-spacing:.06em; pointer-events:none; text-shadow:0 2px 5px #000; }
+    #start { position:fixed; inset:0; display:grid; place-items:center; background:linear-gradient(#0908119c,#090811d9); color:white; padding:24px; }
+    #start.hidden { display:none; }
+    .card { width:min(440px,100%); padding:26px 22px; border-radius:26px; background:#171521ed; border:1px solid #ff3f9b88; box-shadow:0 20px 70px #0009; text-align:center; }
+    .logo { font-size:clamp(27px,8vw,42px); line-height:.95; font-weight:1000; letter-spacing:-.06em; }
+    .logo span { color:var(--pink); }
+    .card p { color:#c9c4d2; font-size:13px; line-height:1.5; }
+    .primary { background:var(--pink); border:0; width:100%; min-height:54px; margin-top:10px; font-size:14px; }
+    .tiny { color:#8f899c!important; font-size:10px!important; }
+    @media (min-width:800px) { .bottom { max-width:760px; margin:auto; } }
+  </style>
+</head>
+<body>
+<canvas id="game" aria-label="Skateboarding game"></canvas>
+<div class="hud">
+  <div class="top">
+    <div class="brand">STREET <span>LEGEND</span><br>SKATE</div>
+    <div class="stats">
+      <div class="pill"><small>SCORE</small><b id="score">0</b></div>
+      <div class="pill"><small>BEST</small><b id="best">0</b></div>
+    </div>
+  </div>
+  <div id="trick">KICKFLIP!</div>
+  <div class="hint">HOLD PUSH TO BUILD SPEED · OLLIE OVER GAPS · LAND CLEAN</div>
+  <div class="bottom">
+    <div class="cluster">
+      <button id="push">PUSH<span class="sub">HOLD</span></button>
+      <button id="brake">BRAKE<span class="sub">HOLD</span></button>
+    </div>
+    <div class="cluster">
+      <button class="action" id="ollie">OLLIE<span class="sub">JUMP</span></button>
+      <button class="action" id="flip">FLIP<span class="sub">TRICK</span></button>
+      <button class="action" id="grind">GRIND<span class="sub">RAIL</span></button>
+    </div>
+  </div>
+</div>
+<div id="start">
+  <div class="card">
+    <div class="logo">STREET <span>LEGEND</span><br>SKATE</div>
+    <p>A pocket-sized street skate session. Push, pop an ollie, throw a kickflip and stick the landing.</p>
+    <button class="primary" id="play">DROP IN</button>
+    <p class="tiny">Original fan-made skate game · Not affiliated with EA or Skate 3</p>
+  </div>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById(id);
+  let W=0,H=0,dpr=1, running=false, last=0, score=0, best=+(localStorage.getItem('streetLegendBest')||0);
+  $('best').textContent=best;
+  const input={push:false,brake:false,grind:false};
+  const skater={x:.28,y:0,vy:0,air:false,rot:0,flip:0,speed:3.1,lean:0,grinding:false};
+  let world=0, trickTextTimer=0, combo=0, comboTimer=0, obstacles=[], particles=[];
+  function resize(){ dpr=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight; canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  addEventListener('resize',resize); resize();
+  function groundY(){ return H*.76; }
+  function spawn(){ const types=['ramp','rail','gap','ramp']; const type=types[Math.floor(Math.random()*types.length)]; obstacles.push({x:W+80,type,w:type==='rail'?120:90,h:type==='ramp'?55:type==='gap'?25:24,done:false}); }
+  let spawnTimer=1.5;
+  function showTrick(t){ $('trick').textContent=t; $('trick').classList.add('show'); trickTextTimer=1.15; }
+  function burst(x,y){ for(let i=0;i<12;i++) particles.push({x,y,vx:(Math.random()-.5)*190,vy:-Math.random()*180,life:.5}); }
+  function jump(){ if(!running||skater.air)return; skater.air=true; skater.vy=-Math.max(420,skater.speed*105); skater.rot=0; skater.flip=0; skater.grinding=false; }
+  function doFlip(){ if(!running||!skater.air)return; skater.flip+=1; combo+=1; showTrick(skater.flip%2?'KICKFLIP!':'HEELFLIP!'); }
+  function doGrind(){ if(!running)return; input.grind=true; }
+  function bindHold(id,key){const el=$(id); const down=e=>{e.preventDefault();input[key]=true;el.classList.add('active');}; const up=e=>{e.preventDefault();input[key]=false;el.classList.remove('active');}; el.addEventListener('pointerdown',down); ['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,up));}
+  bindHold('push','push'); bindHold('brake','brake');
+  $('ollie').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
+  $('flip').addEventListener('pointerdown',e=>{e.preventDefault();doFlip();});
+  $('grind').addEventListener('pointerdown',e=>{e.preventDefault();doGrind();});
+  $('play').onclick=()=>{ $('start').classList.add('hidden'); running=true; last=performance.now(); requestAnimationFrame(loop); };
+  function drawBackground(dt){
+    const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#25203b');g.addColorStop(.55,'#57445c');g.addColorStop(1,'#d07b71');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#f6b17c';ctx.beginPath();ctx.arc(W*.78,H*.2,Math.min(W,H)*.075,0,Math.PI*2);ctx.fill();
+    // skyline
+    let x=-(world*.18%90);
+    while(x<W+100){let bh=H*(.12+((Math.floor((x+world*.18)/90)*17%9)/100));ctx.fillStyle='#292638';ctx.fillRect(x,groundY()-bh-50,65,bh);ctx.fillStyle='#e9a77c55';for(let wy=0;wy<bh-10;wy+=17)for(let wx=8;wx<58;wx+=17)ctx.fillRect(x+wx,groundY()-bh-43+wy,5,7);x+=90;}
+    // distant park
+    ctx.fillStyle='#363342';ctx.fillRect(0,groundY()-30,W,40);
+    ctx.fillStyle='#252330';ctx.beginPath();ctx.moveTo(0,groundY()+10);ctx.lineTo(W,groundY()+10);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+    // concrete ground lines
+    ctx.strokeStyle='#ffffff16';ctx.lineWidth=1;
+    for(let i=0;i<12;i++){let xx=((i*130-world*.9)%W+W)%W;ctx.beginPath();ctx.moveTo(xx,groundY()+12);ctx.lineTo(xx-60,H);ctx.stroke();}
+    ctx.strokeStyle='#ffffff20';ctx.beginPath();ctx.moveTo(0,groundY()+22);ctx.lineTo(W,groundY()+22);ctx.stroke();
+  }
+  function drawObstacle(o){
+    const y=groundY();
+    if(o.type==='ramp'){ctx.fillStyle='#b9b5c3';ctx.beginPath();ctx.moveTo(o.x,y);ctx.lineTo(o.x+o.w,y);ctx.lineTo(o.x+o.w,y-o.h);ctx.closePath();ctx.fill();ctx.strokeStyle='#f6f0ff';ctx.lineWidth=3;ctx.stroke();}
+    if(o.type==='rail'){ctx.strokeStyle='#d7d3df';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(o.x,y-34);ctx.lineTo(o.x+o.w,y-34);ctx.stroke();ctx.fillStyle='#777482';ctx.fillRect(o.x+10,y-34,7,34);ctx.fillRect(o.x+o.w-17,y-34,7,34);}
+    if(o.type==='gap'){ctx.fillStyle='#171521';ctx.fillRect(o.x,y-4,o.w,18);ctx.strokeStyle='#ff3f9b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(o.x,y);ctx.lineTo(o.x,y+8);ctx.moveTo(o.x+o.w,y);ctx.lineTo(o.x+o.w,y+8);ctx.stroke();}
+  }
+  function drawSkater(){
+    const x=W*.28, gy=groundY(), y=gy-skater.y;
+    ctx.save();ctx.translate(x,y);ctx.rotate(skater.air?skater.rot:0);
+    // shadow
+    ctx.globalAlpha=Math.max(.12,1-skater.y/180);ctx.fillStyle='#08070d';ctx.beginPath();ctx.ellipse(0,skater.y+8,34,7,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+    // board
+    ctx.save();ctx.rotate(skater.air?skater.flip*Math.PI*2:0);
+    ctx.fillStyle='#15131c';ctx.beginPath();ctx.roundRect(-31,0,62,8,4);ctx.fill();
+    ctx.fillStyle='#ff3f9b';ctx.fillRect(-19,2,38,3);
+    ctx.fillStyle='#c5c3ce';ctx.beginPath();ctx.arc(-20,9,4,0,7);ctx.arc(20,9,4,0,7);ctx.fill();ctx.restore();
+    // legs
+    ctx.strokeStyle='#24212d';ctx.lineWidth=8;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-7,-12);ctx.lineTo(-13,-1);ctx.moveTo(8,-12);ctx.lineTo(16,-1);ctx.stroke();
+    // body
+    ctx.fillStyle='#ff3f9b';ctx.beginPath();ctx.roundRect(-14,-56,28,43,8);ctx.fill();
+    ctx.strokeStyle='#e0b59c';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(-12,-49);ctx.lineTo(-23,-30);ctx.moveTo(12,-49);ctx.lineTo(23,-36);ctx.stroke();
+    // head and cap
+    ctx.fillStyle='#d6a98e';ctx.beginPath();ctx.arc(0,-67,11,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#24212d';ctx.beginPath();ctx.arc(0,-71,12,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(0,-73,15,4);
+    ctx.restore();
+  }
+  function update(dt){
+    world+=skater.speed*dt*85;
+    if(input.push)skater.speed=Math.min(7.8,skater.speed+dt*2.2);else skater.speed=Math.max(2.3,skater.speed-dt*.22);
+    if(input.brake)skater.speed=Math.max(0,skater.speed-dt*5);
+    spawnTimer-=dt;if(spawnTimer<=0){spawn();spawnTimer=1.35+Math.random()*1.3;}
+    obstacles.forEach(o=>o.x-=skater.speed*dt*85);
+    obstacles=obstacles.filter(o=>o.x>-180);
+    if(skater.air){skater.vy+=dt*1050;skater.y-=skater.vy*dt;if(skater.y<=0){skater.y=0;skater.air=false;skater.vy=0;skater.rot=0;if(combo>0){let pts=combo*250+Math.round(skater.speed*40);score+=pts;showTrick('CLEAN LANDING  +' + pts);burst(W*.28,groundY());combo=0;} }}
+    if(input.grind && !skater.air){const rail=obstacles.find(o=>o.type==='rail'&&Math.abs(o.x-W*.28)<45);if(rail){skater.grinding=true;score+=Math.round(90*dt);showTrick('50-50 GRIND');}input.grind=false;}else skater.grinding=false;
+    // collision with obstacles if not airborne
+    for(const o of obstacles){if(!o.done&&o.x<W*.28+22&&o.x+o.w>W*.28-22){o.done=true;if(o.type==='gap'&&!skater.air||o.type==='rail'&&!skater.grinding){fall();return;} if(o.type==='ramp'&&!skater.air)jump();}}
+    particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=400*dt;p.life-=dt;});particles=particles.filter(p=>p.life>0);
+    if(trickTextTimer>0){trickTextTimer-=dt;if(trickTextTimer<=0)$('trick').classList.remove('show');}
+    $('score').textContent=score;
+  }
+  function fall(){running=false;best=Math.max(best,score);localStorage.setItem('streetLegendBest',best);$('best').textContent=best;$('trick').textContent='BAIL! SESSION OVER';$('trick').classList.add('show');setTimeout(()=>{$('start').classList.remove('hidden');$('play').textContent='TRY AGAIN';},900);}
+  function render(dt){
+    drawBackground(dt);obstacles.forEach(drawObstacle);drawSkater();
+    particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle='#d6ff62';ctx.fillRect(p.x,p.y,4,4);});ctx.globalAlpha=1;
+    if(skater.grinding){ctx.fillStyle='#70e6ff';ctx.font='bold 12px system-ui';ctx.fillText('SPARK!',W*.28+30,groundY()-45);}
+  }
+  function loop(now){if(!running)return;const dt=Math.min((now-last)/1000,.035);last=now;update(dt);render(dt);if(running)requestAnimationFrame(loop);}
+  // initial attract frame
+  render(0);
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+})();
+</script>
+</body>
+</html>

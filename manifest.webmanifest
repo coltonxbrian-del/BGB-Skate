@@ -1,0 +1,19 @@
+{
+  "name": "Street Legend Skate",
+  "short_name": "Street Skate",
+  "description": "A pocket-sized street skateboarding game.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#111018",
+  "theme_color": "#111018",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
